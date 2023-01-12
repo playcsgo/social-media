@@ -9,35 +9,59 @@ const modal = document.querySelector('#modal')
 const pagination = document.querySelector('.pagination')
 const searchForm = document.querySelector('#search-form')
 const searchInput = document.querySelector('#search-input')
+const changeMode = document.querySelector('.change-mode')
 
 //model {}
 const model = {
   users: [],
   filteredUsers: [],
+  curPage: 1
 }
-
 
 //view {}
 const view = {
   dataPerPage: 12,
   renderUserList(users) {
-    let rawHTML = ''
-    users.forEach(user => {
-      rawHTML +=`
-      <div class="col-3">
-      <div class="card m-1">
-        <img src="${user.avatar}" class="card-img-top" alt="user-photo">
-        <div class="card-body">
-          <h5 class="card-title">${user.name + user.surname}</h5>
-          <a href="#" class="btn btn-primary btn-show-modal" data-bs-toggle="modal" data-bs-target="#modal" data-id="${user.id}">More</a>
-          <button class="btn btn-info btn-add-friend" data-id="${user.id}">+</button>
+    if (changeMode.dataset.mode === 'card-mode') {
+      console.log('card-mode');
+      let rawHTML = ''
+      users.forEach(user => {
+        rawHTML +=`
+        <div class="col-3">
+        <div class="card m-1">
+          <img src="${user.avatar}" class="card-img-top" alt="user-photo">
+          <div class="card-body">
+            <h5 class="card-title">${user.name + user.surname}</h5>
+            <a href="#" class="btn btn-primary btn-show-modal" data-bs-toggle="modal" data-bs-target="#modal" data-id="${user.id}">More</a>
+            <button class="btn btn-info btn-add-friend" data-id="${user.id}">+</button>
+          </div>
         </div>
       </div>
-    </div>
-      `
-    })
-    userList.innerHTML = rawHTML
-  },
+        `
+      })  //第一段到這邊
+      userList.innerHTML = rawHTML
+    } else if (changeMode.dataset.mode === 'list-mode') {
+      console.log('list-mode')
+      let rawHTML = '<ul class="list-group col-sm-12 mb-2">'
+      users.forEach(user => {
+        rawHTML += `
+        <li class="list-group-item d-flex justify-content-between">
+          <div class="col-9"> 
+            <h5 class="card-title">${user.name + user.surname}</h5>
+          </div>
+          <div class="col-3"> 
+          <a href="#" class="btn btn-primary btn-show-modal" data-bs-toggle="modal" data-bs-target="#modal" data-id="${user.id}">More</a>
+          <button class="btn btn-info btn-add-friend" data-id="${user.id}">+</button>
+          </div>
+        </li>   
+        `
+      })
+      rawHTML += '</ul>'
+      userList.innerHTML = rawHTML
+    }
+    //寫這裡不行嗎?
+    //userList.innerHTML = rawHTML
+  }, 
   showUserModal(user) {
     modal.innerHTML= `
     <div class="modal-dialog">
@@ -72,7 +96,13 @@ const view = {
     }
     pagination.innerHTML = rawHTML
   },
-
+  checkMode(mode) {
+    if (changeMode.dataset.mode === mode) {
+      return
+    } else {
+      changeMode.dataset.mode = mode
+    }
+  },
 }
 
 //controller {}
@@ -93,12 +123,12 @@ const controller = {
   setListenerOnPaginator() {
     pagination.addEventListener('click', function paginationClicked(event) {
       const page = Number(event.target.dataset.page)
+      model.curPage = page
       view.renderUserList(controller.getUsersByPage(page))
     })
   },
   getUsersByPage(page) {
     const data = model.filteredUsers.length ? model.filteredUsers : model.users
-    console.log(data);
     const startIndex = (page-1) * view.dataPerPage
     const endIndex = startIndex + view.dataPerPage
     const usersInPage = data.slice(startIndex, endIndex)
@@ -113,7 +143,7 @@ const controller = {
         user.surname.toLowerCase().includes(keyword)
         ) 
       view.renderPaginator(model.filteredUsers)
-      view.renderUserList(controller.getUsersByPage(1))
+      view.renderUserList(controller.getUsersByPage(model.curPage))
     })
   },
   addFriend(user) {
@@ -125,16 +155,24 @@ const controller = {
     friends.push(user)
     localStorage.setItem('friends', JSON.stringify(friends))
   },
-
+  setListenerOnChangeMode() {
+    changeMode.addEventListener('click', function changeModeClicked(event) {
+      const mode = event.target.dataset.mode
+      console.log(mode);
+      view.checkMode(mode) 
+      view.renderUserList(controller.getUsersByPage(model.curPage))
+    })
+  }
 }
 
 // mian  主程式
 axios.get(INDEX_URL).then(res => {
   model.users = [...res.data.results]
-  view.renderUserList(controller.getUsersByPage(1))
+  view.renderUserList(controller.getUsersByPage(model.curPage))
   view.renderPaginator(model.users)
 })
 
 controller.setListenerOnUserList()
 controller.setListenerOnSearchForm()
 controller.setListenerOnPaginator()
+controller.setListenerOnChangeMode()
