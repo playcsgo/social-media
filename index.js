@@ -9,7 +9,7 @@ const modal = document.querySelector('#modal')
 const pagination = document.querySelector('.pagination')
 const searchForm = document.querySelector('#search-form')
 const searchInput = document.querySelector('#search-input')
-const changeMode = document.querySelector('.change-mode')
+const currentMode = document.querySelector('.current-mode')
 
 //model {}
 const model = {
@@ -22,9 +22,8 @@ const model = {
 const view = {
   dataPerPage: 12,
   renderUserList(users) {
-    if (changeMode.dataset.mode === 'card-mode') {
-      console.log('card-mode');
-      let rawHTML = ''
+    let rawHTML = ''
+    if (currentMode.dataset.mode === 'card-mode') {
       users.forEach(user => {
         rawHTML +=`
         <div class="col-3">
@@ -39,10 +38,10 @@ const view = {
       </div>
         `
       })  //第一段到這邊
-      userList.innerHTML = rawHTML
-    } else if (changeMode.dataset.mode === 'list-mode') {
+      
+    } else if (currentMode.dataset.mode === 'list-mode') {
       console.log('list-mode')
-      let rawHTML = '<ul class="list-group col-sm-12 mb-2">'
+      rawHTML += '<ul class="list-group col-sm-12 mb-2">'
       users.forEach(user => {
         rawHTML += `
         <li class="list-group-item d-flex justify-content-between">
@@ -57,10 +56,10 @@ const view = {
         `
       })
       rawHTML += '</ul>'
-      userList.innerHTML = rawHTML
+      
     }
     //寫這裡不行嗎?
-    //userList.innerHTML = rawHTML
+    userList.innerHTML = rawHTML
   }, 
   showUserModal(user) {
     modal.innerHTML= `
@@ -97,10 +96,10 @@ const view = {
     pagination.innerHTML = rawHTML
   },
   checkMode(mode) {
-    if (changeMode.dataset.mode === mode) {
+    if (currentMode.dataset.mode === mode) {
       return
     } else {
-      changeMode.dataset.mode = mode
+      currentMode.dataset.mode = mode
     }
   },
 }
@@ -156,7 +155,7 @@ const controller = {
     localStorage.setItem('friends', JSON.stringify(friends))
   },
   setListenerOnChangeMode() {
-    changeMode.addEventListener('click', function changeModeClicked(event) {
+    currentMode.addEventListener('click', function changeModeClicked(event) {
       const mode = event.target.dataset.mode
       console.log(mode);
       view.checkMode(mode) 
