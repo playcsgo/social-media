@@ -14,6 +14,8 @@ const searchInput = document.querySelector('#search-input')
 const model = {
   users: [],
   filteredUsers: [],
+  friends: [],
+  curPage: 1,
 }
 
 
@@ -30,7 +32,7 @@ const view = {
         <div class="card-body">
           <h5 class="card-title">${user.name + user.surname}</h5>
           <a href="#" class="btn btn-primary btn-show-modal" data-bs-toggle="modal" data-bs-target="#modal" data-id="${user.id}">More</a>
-          <button class="btn btn-info btn-add-friend" data-id="${user.id}">+</button>
+          <button class="btn btn-danger btn-remove" data-id="${user.id}">x</button>
         </div>
       </div>
     </div>
@@ -88,17 +90,23 @@ const controller = {
       if (event.target.classList.contains('btn-add-friend')) {
         controller.addFriend(user)
       }
+      if (event.target.classList.contains('btn-remove')) {
+        controller.remove(user)
+        model.users = [...model.friends]
+        view.renderPaginator(model.users)
+        view.renderUserList(controller.getUsersByPage(model.curPage))
+      }
     })
   },
   setListenerOnPaginator() {
     pagination.addEventListener('click', function paginationClicked(event) {
       const page = Number(event.target.dataset.page)
+      model.curPage = page
       view.renderUserList(controller.getUsersByPage(page))
     })
   },
   getUsersByPage(page) {
     const data = model.filteredUsers.length ? model.filteredUsers : model.users
-    console.log(data);
     const startIndex = (page-1) * view.dataPerPage
     const endIndex = startIndex + view.dataPerPage
     const usersInPage = data.slice(startIndex, endIndex)
@@ -117,24 +125,27 @@ const controller = {
     })
   },
   addFriend(user) {
-    const friends = JSON.parse(localStorage.getItem('friends')) || []
+    model.friends = JSON.parse(localStorage.getItem('friends')) || []
     if (friends.some(friend => friend.id === user.id)) {
       alert('加過了')
       return
     }
-    friends.push(user)
-    localStorage.setItem('friends', JSON.stringify(friends))
+    model.friends.push(user)
+    localStorage.setItem('friends', JSON.stringify(model.friends))
   },
-
+  remove(user) {
+    model.friends = JSON.parse(localStorage.getItem('friends'))
+    const index = model.friends.findIndex(friend => friend.id === user.id)
+    model.friends.splice(index, 1)
+    localStorage.setItem('friends', JSON.stringify(model.friends))
+  }
 }
 
 // mian  主程式
-axios.get(INDEX_URL).then(res => {
-  model.users = [...res.data.results]
-  view.renderUserList(controller.getUsersByPage(1))
-  view.renderPaginator(model.users)
-})
+model.users = JSON.parse(localStorage.getItem('friends'))
 
+view.renderUserList(controller.getUsersByPage(1))
+view.renderPaginator(model.users)
 controller.setListenerOnUserList()
 controller.setListenerOnSearchForm()
 controller.setListenerOnPaginator()
